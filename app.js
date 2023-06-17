@@ -5,7 +5,7 @@ const mongoose = require("mongoose");
 require("dotenv").config();
 const seats = require("./Controllers/data.js")
 
-const PORT = process.env.PORT || 8000
+const PORT = process.env.PORT || 5000
 
 app.use(bodyParser.urlencoded({ extended: true }))
 app.use(bodyParser.json())
@@ -32,4 +32,4 @@ connection
 );
 
 
-app.use("/seats", seats)
+app.use("/api", seats)

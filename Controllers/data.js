@@ -9,7 +9,7 @@ async function getSeatPricing(className) {
     const totalSeats = await Seat.countDocuments({ seat_class: className });
     const bookedSeats = await Seat.countDocuments({ seat_class: className, isBooked: true });
     
-    console.log(bookedSeats, totalSeats);
+    // console.log(bookedSeats, totalSeats);
     const percentageBooked = (bookedSeats / totalSeats) * 100;
     
     const priceDetail = await Pricing.findOne({seat_class: className});
@@ -29,22 +29,29 @@ async function getSeatPricing(className) {
     }
 }
 
-router.get('/booking', async(req, res) => {
+// Get All Seats
+router.get('/seats', async(req, res) => {
 
-    const {phoneNumber } = req.query;
+  try {
+      const data = await Seat.find({}).lean().sort({ seat_class: 1 }).exec();
 
-    try {
-        const data = await Booking.find({phoneNumber})
-        if (!data) {
-            return res.status(404).json({ error: 'user not found' });
-          }
-        res.status(200).json({ data });
-    } catch (error) {
-        res.status(500).json({ error});
-    }
+      const formattedSeats = data.map(seat => ({
+          id: seat.id,
+          identifier: seat.seat_identifier,
+          is_booked: seat.isBooked ? seat.isBooked : "false",
+          class: seat.seat_class
+        }));
+
+      res.status(200).json({data: formattedSeats})
+  } catch (error) {
+      res.status(500).json({ error});
+  }
 })
 
-router.get('/:id', async (req, res) => {
+
+// Get Seat pricing
+
+router.get('/seats/:id', async (req, res) => {
 
     const seatId = req.params.id;
   
@@ -75,26 +82,8 @@ router.get('/:id', async (req, res) => {
       res.status(500).json({ error});
     }
   });
-  
-router.get('/', async(req, res) => {
 
-    try {
-        const data = await Seat.find({}).lean().sort({ seat_class: 1 }).exec();
-
-        const formattedSeats = data.map(seat => ({
-            id: seat.id,
-            identifier: seat.seat_identifier,
-            is_booked: seat.isBooked ? seat.isBooked : "false",
-            class: seat.seat_class
-          }));
-
-        res.status(200).json({data: formattedSeats})
-    } catch (error) {
-        res.status(500).json({ error});
-    }
-})
-
-
+// Create Booking
 router.post('/booking', async (req, res) => {
     const { seatIds, name, phoneNumber } = req.body;
 
@@ -108,7 +97,7 @@ router.post('/booking', async (req, res) => {
         // Fetch the seat details for all selected seats
         const seats = await Seat.find({id: { $in: seatIds } }).lean()
 
-        console.log(seats);
+        // console.log(seats);
         // Calculate the total amount for the booking based on seat classes
         let totalAmount = 0;
         for (const seat of seats) {
@@ -135,6 +124,22 @@ router.post('/booking', async (req, res) => {
         res.status(500).json({ error});
     }
 
+})
+
+// Retrieve Bookings
+router.get('/booking', async(req, res) => {
+
+  const {phoneNumber } = req.query;
+
+  try {
+      const data = await Booking.find({phoneNumber})
+      if (!data) {
+          return res.status(404).json({ error: 'user not found' });
+        }
+      res.status(200).json({ data });
+  } catch (error) {
+      res.status(500).json({ error});
+  }
 })
 
 
